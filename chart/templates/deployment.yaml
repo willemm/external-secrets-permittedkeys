@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}
+    spec:
+      serviceAccount: {{ .Release.Name }}
+      containers:
+        - name: webhook
+          image: {{ .Values.image.reposiutory }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          imagePullPolicy: Always
+          resources:
+            limits:
+              memory: 100Mi
+              cpu: 1
+            requests:
+              memory: 50Mi
+              cpu: 100m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/certs
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: {{ .Release.Name }}-certificate
+---

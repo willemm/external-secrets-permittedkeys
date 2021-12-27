@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1alpha3
+kind: Certificate
+metadata:
+  name: {{ .Release.Name }}-certificate
+spec:
+  secretName: {{ .Release.Name }}-certificate
+  dnsNames:
+  - {{ .Release.Name }}.externalsecrets.svc
+  - {{ .Release.Name }}.externalsecrets.svc.cluster.local
+  issuerRef:
+    name: eso-selfsigned-issuer
+---

@@ -1,0 +1,47 @@
+trigger:
+  branches:
+    include:
+    - feat/generic-webhook
+  tags:
+    include:
+    - 'v*'
+
+resources:
+  repositories:
+  - repository: templatesRepo
+    type: git
+    name: Stater/devops-pipelines
+
+jobs:
+- template: /jobs/build/docker-image.yml@templatesRepo
+  parameters:
+    ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
+      tag: ${{ replace(variables['Build.SourceBranch'], 'refs/tags/', '') }}
+    ${{ else }}:
+      tag: "v0.0.1-$(Build.BuildId)"
+    buildArgs: "--build-arg GOPROXY=http://pr-art.europe.stater.corp/artifactory/gocenter"
+- ${{ if startsWith(variables['Build.SourceBranch'], 'refs/tags/v') }}:
+  - job: Helm_Package
+    container: stater/golang-helm:1.17
+    pool: "Docker Linux"
+    displayName: Helm Package
+    variables:
+    - group: DevOps.Pipeline.Credentials.HelmPush
+    - name: appVersion
+      value: ${{ replace(variables['Build.SourceBranch'], 'refs/tags/', '') }}
+    - name: chartVersion
+      value: ${{ replace(variables['Build.SourceBranch'], 'refs/tags/v', '') }}
+    - name: chartName
+      value: external-secrets-validate
+    steps:
+    - script: |
+        set -ex
+        helm package chart --app-version '$(appVersion)' --version '$(chartVersion)'
+      displayName: Package Chart
+    - script: |
+        curl -u ${username}:${password} -X PUT "${repository}/$(chartName)-$(chartVersion).tgz" -T ./$(chartName)-$(chartVersion).tgz
+      env:
+        username: $(artifactory.helm.username)
+        password: $(artifactory.helm.password)
+        repository: $(artifactory.helm.url)
+      displayName: Publish Chart

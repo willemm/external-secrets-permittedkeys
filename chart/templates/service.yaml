@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    name: {{ .Release.Name }}
+spec:
+  ports:
+  - name: webhook
+    port: 443
+    targetPort: 8443
+  selector:
+    name: {{ .Release.Name }} 
+---

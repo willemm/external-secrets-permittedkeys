@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1alpha3
+kind: Issuer
+metadata:
+  name: eso-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
