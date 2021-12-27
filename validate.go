@@ -58,7 +58,7 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 			},
 		},
 	}
-	for s := range es.Spec.Data {
+	for _, s := range es.Spec.Data {
 		Log.Info("TODO check if remoteRef is allowed", "s", s, "remoteRef", s.RemoteRef.Key)
 	}
 	resp, err := json.Marshal(result)

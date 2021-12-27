@@ -17,5 +17,13 @@ RUN go mod download -x
 COPY *.go .
 
 # Build
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -o webhook main.go
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -o webhook .
 
+FROM distroless/static:nonroot
+WORKDIR /
+COPY --from=builder /workspace/webhook /bin/webhook
+
+# Run as UID for nobody
+USER 65532:65532
+
+ENTRYPOINT ["/bin/webhook"]
