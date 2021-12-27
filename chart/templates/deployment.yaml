@@ -18,7 +18,7 @@ spec:
       serviceAccount: {{ .Release.Name }}
       containers:
         - name: webhook
-          image: {{ .Values.image.reposiutory }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           imagePullPolicy: Always
           resources:
             limits:
