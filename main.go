@@ -1,19 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
-	"context"
 
-	"net/http"
 	"crypto/tls"
+	"net/http"
 
-	stdlog "log"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
+	stdlog "log"
 )
 
 var (
@@ -23,8 +23,8 @@ var (
 func main() {
 	var tlscert, tlskey string
 	var port, verbosity int
-	flag.StringVar(&tlscert, "tlsCertFile", "/etc/certs/cert.pem", "File containing the x509 Certificate for HTTPS.")
-	flag.StringVar(&tlskey, "tlsKeyFile", "/etc/certs/key.pem", "File containing the x509 private key to --tlsCertFile.")
+	flag.StringVar(&tlscert, "tlsCertFile", "/etc/certs/tls.crt", "File containing the x509 Certificate for HTTPS.")
+	flag.StringVar(&tlskey, "tlsKeyFile", "/etc/certs/tls.key", "File containing the x509 private key to --tlsCertFile.")
 	flag.IntVar(&port, "port", 8443, "Port to serve on.")
 	flag.IntVar(&verbosity, "verbosity", 0, "Verbosity level.")
 
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	server := http.Server{
-		Addr: fmt.Sprintf(":%d", port),
+		Addr:      fmt.Sprintf(":%d", port),
 		TLSConfig: &tls.Config{Certificates: []tls.Certificate{certs}},
 	}
 	mux := http.NewServeMux()
