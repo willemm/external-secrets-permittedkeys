@@ -63,7 +63,6 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 		Log.Error(nil, "invalid path", "path", req.URL.Path)
 		http.Error(rw, "invalid path", http.StatusBadRequest)
 	}
-	Log.Info("got validation request", "req", req)
 
 	ar := admv1.AdmissionReview{}
 	if err := json.Unmarshal(body, &ar); err != nil {
@@ -78,6 +77,7 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, fmt.Sprintf("failed to parse externalsecret: %v", err), http.StatusBadRequest)
 		return
 	}
+	Log.Info("got validation request", "externalsecret", es)
 	namespace := es.ObjectMeta.Namespace
 	ns, err := kube.Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 	if err != nil {
@@ -98,11 +98,15 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 			}
 			if !matched {
 				allowed = false
-				message = message + fmt.Sprintf("key %s does not match pattern %s\n", s.RemoteRef.Key, nspatt)
+				message = message + fmt.Sprintf("key %s not allowed in namespace %s\n", s.RemoteRef.Key, namespace)
 			}
 		}
 	}
 	result := admv1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admission.k8s.io/v1",
+			Kind: "AdmissionReview",
+		},
 		Response: &admv1.AdmissionResponse{
 			UID:     ar.Request.UID,
 			Allowed: allowed,
@@ -111,12 +115,14 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 			},
 		},
 	}
+	Log.Info("send validation response", "admissionreview", result)
 	resp, err := json.Marshal(result)
 	if err != nil {
 		Log.Error(err, "failed to encode response", "result", result)
 		http.Error(rw, fmt.Sprintf("failed to serialize response: %v", err), http.StatusInternalServerError)
 		return
 	}
+	Log.Info("send validation response", "response", string(resp))
 	if _, err := rw.Write(resp); err != nil {
 		Log.Error(err, "failed to write response", "result", result)
 		http.Error(rw, fmt.Sprintf("failed to write response: %v", err), http.StatusInternalServerError)
