@@ -101,6 +101,18 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 				message = message + fmt.Sprintf("key %s not allowed in namespace %s\n", s.RemoteRef.Key, namespace)
 			}
 		}
+		for _, s := range es.Spec.DataFrom {
+			matched, err := regexp.MatchString(nspatt, s.Key)
+			if err != nil {
+				Log.Error(err, "failed to parse match pattern", "pattern", nspatt)
+				http.Error(rw, fmt.Sprintf("failed to parse match pattern %s: %v", nspatt, err), http.StatusInternalServerError)
+				return
+			}
+			if !matched {
+				allowed = false
+				message = message + fmt.Sprintf("key %s not allowed in namespace %s\n", s.Key, namespace)
+			}
+		}
 	}
 	result := admv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
