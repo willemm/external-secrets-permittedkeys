@@ -17,11 +17,20 @@ import (
 )
 
 var (
-	Log logr.Logger
+	Log             logr.Logger
+	tlscert, tlskey string
 )
 
+func getCertificate(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	cert, err := tls.LoadX509KeyPair(tlscert, tlskey)
+	if err != nil {
+		Log.Error(err, "failed to load certificate", "cert", tlscert, "key", tlskey)
+		return nil, err
+	}
+	return &cert, nil
+}
+
 func main() {
-	var tlscert, tlskey string
 	var port, verbosity int
 	flag.StringVar(&tlscert, "tlsCertFile", "/etc/certs/tls.crt", "File containing the x509 Certificate for HTTPS.")
 	flag.StringVar(&tlskey, "tlsKeyFile", "/etc/certs/tls.key", "File containing the x509 private key to --tlsCertFile.")
@@ -31,15 +40,9 @@ func main() {
 	flag.Parse()
 	stdr.SetVerbosity(verbosity)
 	Log = stdr.NewWithOptions(stdlog.New(os.Stdout, "", stdlog.LstdFlags), stdr.Options{LogCaller: stdr.All}).WithName("webhook")
-
-	certs, err := tls.LoadX509KeyPair(tlscert, tlskey)
-	if err != nil {
-		Log.Error(err, "failed to load certificate", "cert", tlscert, "key", tlskey)
-	}
-
 	server := http.Server{
 		Addr:      fmt.Sprintf(":%d", port),
-		TLSConfig: &tls.Config{Certificates: []tls.Certificate{certs}},
+		TLSConfig: &tls.Config{GetCertificate: getCertificate},
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/validate", validateHandler)

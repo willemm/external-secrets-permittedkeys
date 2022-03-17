@@ -117,7 +117,7 @@ func validateHandler(rw http.ResponseWriter, req *http.Request) {
 	result := admv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "admission.k8s.io/v1",
-			Kind: "AdmissionReview",
+			Kind:       "AdmissionReview",
 		},
 		Response: &admv1.AdmissionResponse{
 			UID:     ar.Request.UID,
